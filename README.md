@@ -201,13 +201,14 @@ Redis pub/sub을 사용하여 로컬 캐시와 Redis 캐시의 일관성을 유�
 
 ### Redis 설정
 ```JAVA
-@Configuration
+import java.nio.channels.Channel;@Configuration
 public class RedisConfig {
 
 	@Bean
 	public RedisMessageListenerContainer RedisMessageListener(RedisConnectionFactory connectionFactory) {
 		RedisMessageListenerContainer container = new RedisMessageListenerContainer();
 		container.setConnectionFactory(connectionFactory);
+		container.addMessageListener(redisMessageListener, new ChannelTopic("Cache"));
 		return container;
 	}
 
@@ -229,15 +230,8 @@ public class RedisConfig {
 @RequiredArgsConstructor
 public class RedisMessageListener implements MessageListener {
 
-	private final RedisTemplate<String, Object> redisTemplate;
 	private final List<CacheManager> cacheManagerList;
-	private final RedisMessageListenerContainer redisMessageListenerContainer;
-
-	@PostConstruct
-	private void init() {
-		redisMessageListenerContainer.addMessageListener(this, new ChannelTopic("Cache"));
-	}
-
+	
 
 	@Override public void onMessage(final Message message, final byte[] pattern) {
 		final var evictKey = new String(message.getBody(), StandardCharsets.UTF_8);
